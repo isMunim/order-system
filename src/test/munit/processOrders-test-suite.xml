@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+    <munit:config name="munit" doc:name="MUnit configuration"/>
+    <spring:beans>
+        <spring:import resource="classpath:order-system.xml"/>
+    </spring:beans>
+    <munit:before-test name="processOrders-test-suiteBefore_Test" description="Before tests actions">
+        <munit:set payload="#[[{'orderID':444, 'location':'international','price':14.01}, {'orderID':444, 'location':'international','price':14.01}, {'orderID':555, 'location':'domestic','price':14.01}]]" doc:name="Set Message: Set payload to International and Domestic orders"/>
+    </munit:before-test>
+    <munit:test name="processOrders_payloadReturnsTwoElementsOfTypeJavaMap_True" description="Calling processOrders flow returns payload of type Java Map Object containig two elements">
+        <flow-ref name="processOrders" doc:name="Flow Reference: processOrders"/>
+        <munit:assert-true message="FAILED: Expected payload's type to be Java Map, but found #[payload.getClass().getName()] instead." condition="#[payload is java.util.Map]" doc:name="Assert True: Validate that payload's type is Java Map"/>
+        <munit:assert-on-equals message="Expected 2 elements but payload has #[payload.size()] elements instead." expectedValue="#[2]" actualValue="#[payload.size()]" doc:name="Assert Equals: Validate that payload has two key/value pairs"/>
+    </munit:test>
+    <munit:test name="processOrders_InternationalKeyConstainsInternationalOrders_True" description="Calling processOrders flow returns international orders when key is international.">
+        <flow-ref name="processOrders" doc:name="Flow-ref to processOrders"/>
+        <munit:assert-true message="Failed, international key has no orders" condition="#[payload.'international'.size() &gt; 0]" doc:name="Assert True: Validate it has some orders"/>
+        <foreach collection="#[payload.'international']" doc:name="For Each: row in internaltional key, do...">
+            <munit:assert-on-equals message="FAILED: Expected location to be internaational but found #[payload.'location'] at row #[flowVars.counter] instead." expectedValue="#[&quot;international&quot;]" actualValue="#[payload.'location']" doc:name="Assert Equals: Validate that location = international"/>
+        </foreach>
+    </munit:test>
+    <munit:test name="processOrders_DomesticKeyConstainsInternationalOrders_True" description="Calling processOrders flow returns international orders when key is international.">
+        <flow-ref name="processOrders" doc:name="Flow-ref to processOrders"/>
+        <munit:assert-true message="Failed, international key has no orders" condition="#[payload.'domestic'.size() &gt; 0]" doc:name="Assert True: Validate it has some orders"/>
+        <foreach collection="#[payload.'domestic']" doc:name="For Each: row in domestic key, do...">
+            <munit:assert-on-equals message="FAILED: Expected location to be internaational but found #[payload.'location'] at row #[flowVars.counter] instead." expectedValue="#[&quot;domestic&quot;]" actualValue="#[payload.'location']" doc:name="Assert Equals: Validate that location = domestic"/>
+        </foreach>
+    </munit:test>
+</mule>
